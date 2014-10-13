@@ -17,27 +17,26 @@ module Rosette
         super(stream)
       end
 
-      def close
-        raise NotImplementedError, 'please use a derived class.'
-      end
-
       class RailsSerializer < YamlSerializer
         attr_reader :trie
 
-        def initialize(stream, encoding)
+        def initialize(stream, encoding = Encoding::UTF_8)
           super(stream, encoding)
           @trie = Trie.new
         end
 
-        def write_translation(trans)
-          meta_key_parts = trans.phrase.meta_key.split('.')
-          translation = trans.translation.encode(encoding)
-          trie.add(meta_key_parts, translation)
+        def write_key_value(key, value)
+          key_parts = key.split('.')
+          encoded_value = value.encode(encoding)
+          trie.add(key_parts, encoded_value)
         end
 
-        def close
+        def flush
           write_node(trie.root, nil)
-          writer.close
+          writer.flush
+        end
+
+        def after_initialize
         end
 
         protected
@@ -45,10 +44,10 @@ module Rosette
         # depth-first
         def write_node(node, parent_key)
           if node.has_children?
-            if children_are_array(node)
-              write_array(node, parent_key)
+            if children_are_sequence(node)
+              write_sequence(node, parent_key)
             else
-              write_hash(node, parent_key)
+              write_map(node, parent_key)
             end
           elsif node.has_value?
             write_value(node, parent_key)
@@ -56,46 +55,46 @@ module Rosette
         end
 
         def write_value(node, parent_key)
-          if writer.in_hash?
+          if writer.in_map?
             writer.write_key_value(parent_key, node.value)
           else
             writer.write_element(node.value)
           end
         end
 
-        def write_hash(node, parent_key)
-          if writer.in_hash?
-            writer.write_hash(parent_key)
+        def write_map(node, parent_key)
+          if writer.in_map?
+            writer.write_map(parent_key)
           else
-            writer.write_hash
+            writer.write_map
           end
 
           node.each_child do |key, child|
             write_node(child, key)
           end
 
-          writer.close_hash
+          writer.close_map
         end
 
-        def write_array(node, parent_key)
-          if writer.in_hash?
-            writer.write_array(parent_key)
+        def write_sequence(node, parent_key)
+          if writer.in_map?
+            writer.write_sequence(parent_key)
           else
-            writer.write_array
+            writer.write_sequence
           end
 
-          generate_array(node).each do |element|
+          generate_sequence(node).each do |element|
             write_node(element, nil)
           end
 
-          writer.close_array
+          writer.close_sequence
         end
 
-        def children_are_array(node)
+        def children_are_sequence(node)
           node.children.all? { |key, _| key =~ /[\d]+/ }
         end
 
-        def generate_array(node)
+        def generate_sequence(node)
           keys = node.children.keys.map(&:to_i)
           keys.each_with_object(Array.new(keys.max)) do |idx, arr|
             arr[idx] = node.children[idx.to_s]
