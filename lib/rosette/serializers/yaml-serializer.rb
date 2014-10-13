@@ -17,6 +17,10 @@ module Rosette
         super(stream)
       end
 
+      def default_extension
+        '.yml'
+      end
+
       class RailsSerializer < YamlSerializer
         attr_reader :trie
 
@@ -34,6 +38,7 @@ module Rosette
         def flush
           write_node(trie.root, nil)
           writer.flush
+          stream.flush
         end
 
         def after_initialize
