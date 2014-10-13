@@ -17,7 +17,7 @@ module Rosette
         super(stream)
       end
 
-      def default_extension
+      def self.default_extension
         '.yml'
       end
 
