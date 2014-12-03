@@ -48,22 +48,27 @@ module Rosette
 
         # depth-first
         def write_node(node, parent_key)
-          if node.has_children?
-            if children_are_sequence(node)
-              write_sequence(node, parent_key)
-            else
-              write_map(node, parent_key)
+          if node
+            if node.has_children?
+              if children_are_sequence(node)
+                write_sequence(node, parent_key)
+              else
+                write_map(node, parent_key)
+              end
+            elsif node.has_value?
+              write_value(node, parent_key)
             end
-          elsif node.has_value?
+          else
             write_value(node, parent_key)
           end
         end
 
         def write_value(node, parent_key)
+          value = node ? node.value : ''
           if writer.in_map?
-            writer.write_key_value(parent_key, node.value)
+            writer.write_key_value(parent_key, value)
           else
-            writer.write_element(node.value)
+            writer.write_element(value)
           end
         end
 
