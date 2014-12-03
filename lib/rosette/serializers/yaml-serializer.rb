@@ -9,12 +9,11 @@ module Rosette
   module Serializers
 
     class YamlSerializer < Serializer
-      attr_reader :writer, :encoding
+      attr_reader :writer
 
       def initialize(stream, locale, encoding = Encoding::UTF_8)
-        @encoding = encoding
+        super
         @writer = YamlWriteStream.from_stream(stream, encoding)
-        super(stream)
       end
 
       def self.default_extension
@@ -25,7 +24,7 @@ module Rosette
         attr_reader :trie
 
         def initialize(stream, locale, encoding = Encoding::UTF_8)
-          super(stream, locale, encoding)
+          super
           @trie = Trie.new
         end
 
