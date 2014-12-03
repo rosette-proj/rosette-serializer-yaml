@@ -35,9 +35,8 @@ module Rosette
         end
 
         def flush
-          lang_node = TrieNode.new(locale.language)
-          write_map(lang_node, nil)
-          write_node(trie.root, nil)
+          writer.write_map(locale.language)
+          write_node(trie.root, locale.language)
           writer.flush
           stream.flush
         end
