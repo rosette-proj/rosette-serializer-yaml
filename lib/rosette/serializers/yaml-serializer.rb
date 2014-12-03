@@ -11,7 +11,7 @@ module Rosette
     class YamlSerializer < Serializer
       attr_reader :writer, :encoding
 
-      def initialize(stream, encoding = Encoding::UTF_8)
+      def initialize(stream, locale, encoding = Encoding::UTF_8)
         @encoding = encoding
         @writer = YamlWriteStream.from_stream(stream, encoding)
         super(stream)
@@ -24,8 +24,8 @@ module Rosette
       class RailsSerializer < YamlSerializer
         attr_reader :trie
 
-        def initialize(stream, encoding = Encoding::UTF_8)
-          super(stream, encoding)
+        def initialize(stream, locale, encoding = Encoding::UTF_8)
+          super(stream, locale, encoding)
           @trie = Trie.new
         end
 
@@ -36,12 +36,11 @@ module Rosette
         end
 
         def flush
+          lang_node = TrieNode.new(locale.language)
+          write_map(lang_node, nil)
           write_node(trie.root, nil)
           writer.flush
           stream.flush
-        end
-
-        def after_initialize
         end
 
         protected
