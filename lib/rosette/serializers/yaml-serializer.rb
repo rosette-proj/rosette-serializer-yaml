@@ -98,7 +98,7 @@ module Rosette
         end
 
         def children_are_sequence(node)
-          node.children.all? { |key, _| key =~ /[\d]+/ }
+          node.children.all? { |key, _| key =~ /\A[\d]+\z/ }
         end
 
         def generate_sequence(node)
