@@ -13,29 +13,99 @@ describe YamlSerializer::RailsSerializer do
     )
   end
 
-  it 'writes key/value pairs' do
-    serializer.write_key_value('foo', 'bar')
+  def serialize
+    yield
     serializer.flush
-    result = YAML.load(stream.string)
+    YAML.load(stream.string)
+  end
+
+  it 'writes key/value pairs' do
+    result = serialize do
+      serializer.write_key_value('foo', 'bar')
+    end
+
     expect(result).to eq('fr' => { 'foo' => 'bar' })
   end
 
   it 'nests dotted keys' do
-    serializer.write_key_value('foo.bar.baz', 'boo')
-    serializer.flush
-    result = YAML.load(stream.string)
+    result = serialize do
+      serializer.write_key_value('foo.bar.baz', 'boo')
+    end
+
     expect(result).to eq({
       'fr' => { 'foo' => { 'bar' => { 'baz' => 'boo' } } }
     })
   end
 
+  it "doesn't strip trailing periods" do
+    result = serialize do
+      serializer.write_key_value('timezones.Solomon Is.', 'val')
+    end
+
+    expect(result).to eq({
+      'fr' => {
+        'timezones' => {
+          'Solomon Is.' => 'val'
+        }
+      }
+    })
+  end
+
+  it 'strips trailing periods if they exist in the middle of the key' do
+    result = serialize do
+      serializer.write_key_value('timezones.Solomon Is.foobar', 'val')
+    end
+
+    expect(result).to eq({
+      'fr' => {
+        'timezones' => {
+          'Solomon Is' => {
+            'foobar' => 'val'
+          }
+        }
+      }
+    })
+  end
+
+  it "doesn't strip double periods" do
+    result = serialize do
+      serializer.write_key_value('timezones.Solomon Is..foobar', 'val')
+    end
+
+    expect(result).to eq({
+      'fr' => {
+        'timezones' => {
+          'Solomon Is.' => {
+            'foobar' => 'val'
+          }
+        }
+      }
+    })
+  end
+
+  it "doesn't split at periods if they exist before a space" do
+    result = serialize do
+      serializer.write_key_value('timezones.St. Petersburg.foobar', 'val')
+    end
+
+    expect(result).to eq({
+      'fr' => {
+        'timezones' => {
+          'St. Petersburg' => {
+            'foobar' => 'val'
+          }
+        }
+      }
+    })
+  end
+
   it 'writes multiple key/value pairs independent of order' do
-    serializer.write_key_value('i.like.burritos', 'beanz')
-    serializer.write_key_value('ham.cheese', 'sandwich')
-    serializer.write_key_value('i.like.cheesy.burritos', 'yum')
-    serializer.write_key_value('ham.lettuce', 'crunchay')
-    serializer.flush
-    result = YAML.load(stream.string)
+    result = serialize do
+      serializer.write_key_value('i.like.burritos', 'beanz')
+      serializer.write_key_value('ham.cheese', 'sandwich')
+      serializer.write_key_value('i.like.cheesy.burritos', 'yum')
+      serializer.write_key_value('ham.lettuce', 'crunchay')
+    end
 
     expect(result).to eq({
       'fr' => {
@@ -56,11 +126,11 @@ describe YamlSerializer::RailsSerializer do
   end
 
   it 'writes arrays for sequential keys' do
-    serializer.write_key_value('foo.1', 'b')
-    serializer.write_key_value('foo.0', 'a')
-    serializer.write_key_value('foo.2', 'c')
-    serializer.flush
-    result = YAML.load(stream.string)
+    result = serialize do
+      serializer.write_key_value('foo.1', 'b')
+      serializer.write_key_value('foo.0', 'a')
+      serializer.write_key_value('foo.2', 'c')
+    end
 
     expect(result).to eq({
       'fr' => { 'foo' => ['a', 'b', 'c'] }
@@ -68,11 +138,11 @@ describe YamlSerializer::RailsSerializer do
   end
 
   it 'does not write arrays for sequential but non-numeric keys' do
-    serializer.write_key_value('foo.bar1', 'b')
-    serializer.write_key_value('foo.bar0', 'a')
-    serializer.write_key_value('foo.bar2', 'c')
-    serializer.flush
-    result = YAML.load(stream.string)
+    result = serialize do
+      serializer.write_key_value('foo.bar1', 'b')
+      serializer.write_key_value('foo.bar0', 'a')
+      serializer.write_key_value('foo.bar2', 'c')
+    end
 
     expect(result).to eq({
       'fr' => {
@@ -86,12 +156,12 @@ describe YamlSerializer::RailsSerializer do
   end
 
   it 'writes nested key/value pairs and arrays (in any order)' do
-    serializer.write_key_value('foo.0.bar.0', 'a')
-    serializer.write_key_value('foo.0.bar.1', 'b')
-    serializer.write_key_value('foo.1.bar.0', 'c')
-    serializer.write_key_value('foo.1.bar.1', 'd')
-    serializer.flush
-    result = YAML.load(stream.string)
+    result = serialize do
+      serializer.write_key_value('foo.0.bar.0', 'a')
+      serializer.write_key_value('foo.0.bar.1', 'b')
+      serializer.write_key_value('foo.1.bar.0', 'c')
+      serializer.write_key_value('foo.1.bar.1', 'd')
+    end
 
     expect(result).to eq({
       'fr' => {

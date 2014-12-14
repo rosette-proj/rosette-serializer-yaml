@@ -29,7 +29,7 @@ module Rosette
         end
 
         def write_key_value(key, value)
-          key_parts = key.split('.')
+          key_parts = split_key(key)
           encoded_value = value.encode(encoding)
           trie.add(key_parts, encoded_value)
         end
@@ -42,6 +42,16 @@ module Rosette
         end
 
         protected
+
+        def split_key(key)
+          # Doesn't allow dots to come before spaces or at the end of the key.
+          # Uses regex negative lookahead, that's what the (?!) sections are.
+          # Examples:
+          # 'timezones.Solomon Is.'     => ['timezones', 'Solomon Is.']
+          # 'timezones.Solomon Is.foo'  => ['timezones', 'Solomon Is', 'foo']
+          # 'timezones.Solomon Is..foo' => ['timezones', 'Solomon Is.', 'foo']
+          key.split(/\.(?!\s)(?!\z)(?!\.)/)
+        end
 
         # depth-first
         def write_node(node, parent_key)
