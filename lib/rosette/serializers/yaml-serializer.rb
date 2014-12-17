@@ -28,6 +28,10 @@ module Rosette
           @trie = Trie.new
         end
 
+        def write_raw(text)
+          writer.stream.write(text)
+        end
+
         def write_key_value(key, value)
           key_parts = split_key(key)
           encoded_value = value.encode(encoding)
