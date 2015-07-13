@@ -13,6 +13,8 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.has_rdoc = true
 
+  s.add_dependency 'yaml-write-stream', '~> 1.0'
+
   s.require_path = 'lib'
   s.files = Dir["{lib,spec}/**/*", "Gemfile", "History.txt", "README.md", "Rakefile", "rosette-serializer-yaml.gemspec"]
 end
