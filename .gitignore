@@ -1,6 +1,5 @@
 Gemfile.lock
-Jarfile.lock
 .DS_Store
 pkg/
-.jbundler/
 tester.rb
+classpath.txt
